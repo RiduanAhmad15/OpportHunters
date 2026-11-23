@@ -1,0 +1,8 @@
+{
+  "generated": "2026-11-23",
+  "window": "sample data: the first real report arrives Thu 26 Nov",
+  "reviewed": 1,
+  "jobs": [
+    {"rank":1,"score":0,"tier":"Low","verdict":"Sample","status":"Placeholder","title":"Sample row: replaced by the first scout run","company":"-","industry":"-","location":"Singapore","work_mode":"-","url":"","source":"-","posted":"","salary_estimate":"","comp_rating":"","why":"This file is overwritten by each scheduled run.","gaps":"","effort":"","career":{"comp":0,"learning":0,"growth":0,"ai":0,"leadership":0}}
+  ]
+}
