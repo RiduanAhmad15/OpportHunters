@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>OpportHunters · Job Match Assessor</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#121a33; --panel2:#18223f; --line:#26335c;
+    --text:#e8ecf8; --muted:#93a0c4; --accent:#38bdf8; --accent2:#a78bfa;
+    --vh:#22c55e; --hi:#84cc16; --mid:#f59e0b; --low:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 10% -10%,#1b2a5a 0,transparent 60%),var(--bg);color:var(--text);
+       font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{padding:28px 24px 10px;max-width:1200px;margin:auto}
+  h1{margin:0;font-size:28px;letter-spacing:.3px}
+  h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);margin-top:4px}
+  main{max-width:1200px;margin:auto;padding:12px 24px 40px;display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h2{margin:0 0 12px;font-size:17px}
+  label{display:block;color:var(--muted);font-size:13px;margin:10px 0 4px}
+  input,textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 11px;font:inherit}
+  textarea{min-height:220px;resize:vertical}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  button{background:linear-gradient(90deg,#0ea5e9,#7c3aed);color:#fff;border:0;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer;font:inherit}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+  button.small{padding:5px 10px;font-size:13px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .result{display:none;margin-top:16px;border-top:1px dashed var(--line);padding-top:14px}
+  .tier{display:inline-block;padding:6px 14px;border-radius:999px;font-weight:700;color:#08111f}
+  .t-VH{background:var(--vh)} .t-H{background:var(--hi)} .t-M{background:var(--mid)} .t-L{background:var(--low);color:#fff}
+  .score{font-size:40px;font-weight:800;margin-right:12px;vertical-align:middle}
+  .bars{margin-top:12px}
+  .bar{margin:6px 0}
+  .bar .lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+  .bar .trk{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden}
+  .bar .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .chip{font-size:12px;padding:3px 9px;border-radius:999px;background:#0f2a44;border:1px solid #1e4b73}
+  .chip.miss{background:#2a1530;border-color:#5b2a63}
+  .chip.neg{background:#3a1414;border-color:#7f1d1d}
+  ul.tips{margin:6px 0 0 18px;padding:0}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none}
+  td a{color:var(--accent)}
+  .links a{display:inline-block;margin:4px 6px 0 0;color:var(--accent);text-decoration:none;border:1px solid var(--line);padding:5px 10px;border-radius:8px;font-size:13px}
+  .muted{color:var(--muted);font-size:13px}
+  details summary{cursor:pointer;color:var(--accent)}
+  .full{grid-column:1/-1}
+  footer{max-width:1200px;margin:auto;padding:0 24px 30px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎯 <span>OpportHunters</span></h1>
+  <div class="sub">Paste a current job listing → get a match tier (Very High · High · Mid · Low), the gaps to close, and how to tailor your application.</div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>1 · Assess a listing</h2>
+    <div class="row">
+      <div><label>Job title</label><input id="title" placeholder="e.g. Head, Cyber Incident Response"></div>
+      <div><label>Company / agency</label><input id="company" placeholder="e.g. GovTech"></div>
+    </div>
+    <div class="row">
+      <div><label>Link</label><input id="link" placeholder="https://…"></div>
+      <div><label>Closing date (optional)</label><input id="closing" type="date"></div>
+    </div>
+    <label>Full job description (paste everything: responsibilities, requirements, nice-to-haves)</label>
+    <textarea id="jd" placeholder="Paste the listing here…"></textarea>
+    <div class="actions">
+      <button id="assessBtn">Assess match</button>
+      <button class="ghost" id="saveBtn">Save to tracker</button>
+      <button class="ghost" id="clearBtn">Clear</button>
+    </div>
+
+    <div class="result" id="result">
+      <div><span class="score" id="score">0</span><span class="tier" id="tier">—</span></div>
+      <div class="bars" id="bars"></div>
+      <label>Matched strengths</label><div class="chips" id="matched"></div>
+      <label>Asked for but not in your profile (address these or add them if true)</label><div class="chips" id="missing"></div>
+      <label>Watch-outs</label><div class="chips" id="negs"></div>
+      <label>How to tailor this application</label><ul class="tips" id="tips"></ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2 · Find current listings</h2>
+    <label>Search keywords</label>
+    <input id="q" value="cybersecurity incident response lead">
+    <div class="links" id="searchLinks"></div>
+    <p class="muted">Open a board, copy a listing, paste it into the assessor. A fresh digest of ranked roles also lands in your inbox every 3 days.</p>
+
+    <h2 style="margin-top:20px">3 · Your profile</h2>
+    <p class="muted">Scoring compares listings against these keywords. Edit freely; saved in this browser only.</p>
+    <details>
+      <summary>Edit profile keywords</summary>
+      <label>Years of experience</label><input id="years" type="number" min="0">
+      <div id="profileFields"></div>
+      <div class="actions"><button class="small" id="saveProfile">Save profile</button><button class="small ghost" id="resetProfile">Reset to default</button></div>
+    </details>
+  </section>
+
+  <section class="card full">
+    <h2>4 · Tracker</h2>
+    <div class="actions" style="margin-top:0;margin-bottom:10px">
+      <select id="filterTier" style="width:auto"><option value="">All tiers</option><option>Very High</option><option>High</option><option>Mid</option><option>Low</option></select>
+      <button class="small ghost" id="exportCsv">Export CSV</button>
+      <button class="small ghost" id="exportJson">Backup JSON</button>
+      <label class="small ghost" style="margin:0;display:inline-block;border:1px solid var(--line);border-radius:9px;padding:5px 10px;cursor:pointer;color:var(--text)">Restore JSON<input type="file" id="importJson" accept=".json" style="display:none"></label>
+    </div>
+    <table>
+      <thead><tr><th data-k="score">Score</th><th data-k="tier">Tier</th><th data-k="title">Role</th><th data-k="company">Company</th><th data-k="closing">Closes</th><th>Status</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="muted" id="emptyMsg">No listings saved yet.</p>
+  </section>
+</main>
+<footer>OpportHunters · scoring runs entirely in your browser; nothing you paste is sent anywhere.</footer>
+
+<script>
+(function(){
+  "use strict";
+  var LS_PROFILE="oh_profile_v1", LS_JOBS="oh_jobs_v1";
+  function lsGet(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+  function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+  // Default profile: Ridz — SIRT / IR leader, SOC builder, CII, Singapore public sector, GenAI for SOC.
+  var DEFAULT_PROFILE={
+    years:25,
+    groups:[
+      {name:"Incident response & detection",weight:30,keys:["incident response","incident detection","incident management","sirt","csirt","cert","dfir","digital forensics","threat detection","threat hunting","crisis management","crisis exercise","tabletop","playbook","ioc","indicators of compromise","cve","vulnerability management","threat intelligence","cyber threat intelligence","red team","purple team","breach","containment"]},
+      {name:"SOC & security engineering",weight:20,keys:["soc","security operations","siem","soar","edr","xdr","ndr","ddos","waf","splunk","qradar","sentinel","log analytics","detection engineering","use case","mitre att&ck","att&ck","d3fend","firewall","cloud security","zero trust","network security"]},
+      {name:"Leadership & governance",weight:20,keys:["lead","leader","leadership","head","director","manager","management","stakeholder","strategy","roadmap","governance","risk management","budget","team","mentor","board","senior management","programme","program","policy","framework","nist","iso 27001","compliance","audit"]},
+      {name:"AI & automation",weight:15,keys:["ai","artificial intelligence","genai","generative ai","llm","machine learning","ml","agentic","ai agent","automation","ai security","securing ai","atlas","prompt injection","ai governance","python","copilot"]},
+      {name:"Sector & domain fit",weight:15,keys:["critical information infrastructure","cii","critical infrastructure","government","public sector","public service","govtech","csa","cyber security agency","singapore","smart nation","transport","payments","financial services","mas trm","cybersecurity act","national","defence","ot security","infrastructure"]}
+    ],
+    negatives:["intern","internship","fresh graduate","graduate programme","entry level","entry-level","junior","0-2 years","1-2 years","1-3 years","no experience","part-time","sales quota","commission only"]
+  };
+
+  // Common requirement terms we check for even if they are not in the profile (to surface gaps).
+  var GAP_TERMS=["cissp","cism","cisa","ccsp","gcih","gcfa","oscp","crest","giac","ccisp","aws","azure","gcp","kubernetes","devsecops","appsec","penetration testing","iam","pam","grc","ot security","ics","scada","privacy","pdpa","data protection","iso 27001","nist csf","mas trm","cloud","malware analysis","reverse engineering","budget ownership","p&l","people management","degree","master","mba","security clearance","japanese","mandarin","bahasa","on-call","24/7","shift"];
+
+  var profile=lsGet(LS_PROFILE,null)||JSON.parse(JSON.stringify(DEFAULT_PROFILE));
+  var jobs=lsGet(LS_JOBS,[]);
+  var last=null, sortKey="score", sortDir=-1;
+  var $=function(id){return document.getElementById(id)};
+
+  function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  function norm(t){return " "+t.toLowerCase().replace(/[‐-―]/g,"-").replace(/[^a-z0-9&+#\-\/\. ]+/g," ").replace(/\s+/g," ")+" "}
+  function has(text,k){
+    var kk=k.toLowerCase();
+    var re=new RegExp("(^|[^a-z0-9])"+kk.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"($|[^a-z0-9])");
+    return re.test(text);
+  }
+  function safeUrl(u){u=(u||"").trim();return /^https?:\/\//i.test(u)?u:""}
+
+  function yearsAsked(text){
+    var m, max=0, re=/(\d{1,2})\s*\+?\s*(?:-|to)?\s*(?:\d{1,2})?\s*\+?\s*years?/g;
+    while((m=re.exec(text))){var n=parseInt(m[1],10);if(n>max&&n<41)max=n}
+    return max;
+  }
+
+  function assess(raw,title){
+    var text=norm((title||"")+" "+raw);
+    var titleN=norm(title||"");
+    var total=0, wsum=0, breakdown=[], matched=[], missing=[], negs=[];
+    profile.groups.forEach(function(g){
+      var hits=g.keys.filter(function(k){return has(text,k)});
+      // Saturating: ~5 distinct hits in a group counts as a full match.
+      var frac=Math.min(1,hits.length/5);
+      breakdown.push({name:g.name,pct:Math.round(frac*100),hits:hits.length});
+      total+=frac*g.weight; wsum+=g.weight;
+      hits.forEach(function(h){if(matched.indexOf(h)<0)matched.push(h)});
+    });
+    var score=wsum?total/wsum*100:0;
+
+    // Title bonus: core role words in the title matter more than in the body.
+    var titleBoost=["incident","response","soc","security operations","cyber","threat","sirt","csirt","head","lead","director","ciso","security"].filter(function(k){return has(titleN,k)}).length;
+    score+=Math.min(10,titleBoost*2.5);
+
+    // Seniority fit
+    var ya=yearsAsked(text), yrs=Number(profile.years)||0;
+    if(ya&&ya>yrs){score-=15;negs.push("asks "+ya+"+ yrs")}
+    else if(ya&&ya<=5&&yrs>=15){score-=8;negs.push("asks only "+ya+" yrs — may be too junior")}
+
+    profile.negatives.forEach(function(n){if(has(text,n)){score-=10;negs.push(n)}});
+
+    var known=[];profile.groups.forEach(function(g){known=known.concat(g.keys)});
+    GAP_TERMS.forEach(function(t){if(has(text,t)&&known.indexOf(t)<0)missing.push(t)});
+
+    score=Math.max(0,Math.min(100,Math.round(score)));
+    var tier=score>=75?"Very High":score>=55?"High":score>=35?"Mid":"Low";
+
+    var tips=[];
+    var weakest=breakdown.slice().sort(function(a,b){return a.pct-b.pct})[0];
+    var strongest=breakdown.slice().sort(function(a,b){return b.pct-a.pct})[0];
+    tips.push("Lead your CV summary with <b>"+esc(strongest.name.toLowerCase())+"</b>, the strongest overlap here, using the listing's own wording.");
+    if(weakest.pct<40)tips.push("Weak spot: <b>"+esc(weakest.name.toLowerCase())+"</b>. Add one concrete example (scope, scale, outcome) that speaks to it.");
+    if(missing.length)tips.push("Address <b>"+esc(missing.slice(0,4).join(", "))+"</b> directly: show equivalent experience, or say what you are doing to close the gap.");
+    if(has(text,"ai")||has(text,"genai")||has(text,"automation"))tips.push("Your GenAI/agent automation for SOC work is a differentiator. Quantify it (e.g. triage time saved, alerts auto-handled).");
+    if(has(text,"critical information infrastructure")||has(text,"cii")||has(text,"critical infrastructure"))tips.push("Spell out your CII track record: 15 years protecting national systems, crisis exercises, and the 2022 National Day Commendation Medal.");
+    if(tier==="Very High"||tier==="High")tips.push("Worth a referral: find a hiring manager or team member on LinkedIn and message them before you apply.");
+    if(tier==="Low")tips.push("Low fit. Skip it, unless the company itself is a strategic target, in which case aim for a better-matched role there.");
+
+    return {score:score,tier:tier,breakdown:breakdown,matched:matched,missing:missing,negs:negs,tips:tips};
+  }
+
+  function tierClass(t){return {"Very High":"t-VH","High":"t-H","Mid":"t-M","Low":"t-L"}[t]||""}
+
+  function render(r){
+    $("result").style.display="block";
+    $("score").textContent=r.score;
+    var t=$("tier");t.textContent=r.tier;t.className="tier "+tierClass(r.tier);
+    $("bars").innerHTML=r.breakdown.map(function(b){
+      return '<div class="bar"><div class="lbl"><span>'+esc(b.name)+'</span><span>'+b.pct+'%</span></div><div class="trk"><div class="fill" style="width:'+b.pct+'%"></div></div></div>';
+    }).join("");
+    $("matched").innerHTML=r.matched.length?r.matched.map(function(m){return '<span class="chip">'+esc(m)+'</span>'}).join(""):'<span class="muted">None found</span>';
+    $("missing").innerHTML=r.missing.length?r.missing.map(function(m){return '<span class="chip miss">'+esc(m)+'</span>'}).join(""):'<span class="muted">No obvious gaps</span>';
+    $("negs").innerHTML=r.negs.length?r.negs.map(function(m){return '<span class="chip neg">'+esc(m)+'</span>'}).join(""):'<span class="muted">None</span>';
+    $("tips").innerHTML=r.tips.map(function(x){return "<li>"+x+"</li>"}).join("");
+  }
+
+  $("assessBtn").onclick=function(){
+    var jd=$("jd").value.trim();
+    if(jd.length<40){alertBox("Paste the full job description first.");return}
+    last=assess(jd,$("title").value);render(last);
+    $("result").scrollIntoView({behavior:"smooth",block:"nearest"});
+  };
+  $("saveBtn").onclick=function(){
+    var jd=$("jd").value.trim();
+    if(jd.length<40){alertBox("Paste and assess a listing first.");return}
+    var r=last||assess(jd,$("title").value);
+    jobs.push({id:Date.now(),title:$("title").value.trim()||"(untitled role)",company:$("company").value.trim(),link:safeUrl($("link").value),
+      closing:$("closing").value,score:r.score,tier:r.tier,status:"New",added:new Date().toISOString().slice(0,10)});
+    lsSet(LS_JOBS,jobs);drawTable();alertBox("Saved to tracker.");
+  };
+  $("clearBtn").onclick=function(){["title","company","link","closing","jd"].forEach(function(i){$(i).value=""});$("result").style.display="none";last=null};
+
+  function alertBox(msg){
+    var d=document.createElement("div");d.textContent=msg;
+    d.style.cssText="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid #334155;color:#fff;padding:10px 16px;border-radius:10px;z-index:9";
+    document.body.appendChild(d);setTimeout(function(){d.remove()},2200);
+  }
+
+  // Search links
+  var BOARDS=[
+    ["LinkedIn",function(q){return "https://www.linkedin.com/jobs/search/?keywords="+encodeURIComponent(q)+"&location=Singapore&f_TPR=r604800"}],
+    ["MyCareersFuture",function(q){return "https://www.mycareersfuture.gov.sg/search?search="+encodeURIComponent(q)+"&sortBy=new_posting_date"}],
+    ["Careers@Gov",function(q){return "https://careers.gov.sg/jobs-listing?keyword="+encodeURIComponent(q)}],
+    ["JobStreet",function(q){return "https://sg.jobstreet.com/"+encodeURIComponent(q.replace(/\s+/g,"-"))+"-jobs"}],
+    ["Indeed",function(q){return "https://sg.indeed.com/jobs?q="+encodeURIComponent(q)+"&fromage=7&sort=date"}],
+    ["eFinancialCareers",function(q){return "https://www.efinancialcareers.sg/jobs?q="+encodeURIComponent(q)+"&location=Singapore"}]
+  ];
+  function drawLinks(){var q=$("q").value.trim()||"cybersecurity";
+    $("searchLinks").innerHTML=BOARDS.map(function(b){return '<a target="_blank" rel="noopener noreferrer" href="'+esc(b[1](q))+'">'+esc(b[0])+' ↗</a>'}).join("")}
+  $("q").oninput=drawLinks;drawLinks();
+
+  // Profile editor
+  function drawProfile(){
+    $("years").value=profile.years;
+    $("profileFields").innerHTML=profile.groups.map(function(g,i){
+      return '<label>'+esc(g.name)+' · weight <input data-w="'+i+'" type="number" min="0" max="100" value="'+g.weight+'" style="width:70px;display:inline-block;padding:3px 6px"></label><textarea data-g="'+i+'" style="min-height:70px">'+esc(g.keys.join(", "))+'</textarea>';
+    }).join("")+'<label>Red flags (lower the score)</label><textarea id="negKeys" style="min-height:60px">'+esc(profile.negatives.join(", "))+'</textarea>';
+  }
+  function split(s){return s.split(",").map(function(x){return x.trim().toLowerCase()}).filter(Boolean)}
+  $("saveProfile").onclick=function(){
+    profile.years=Number($("years").value)||0;
+    document.querySelectorAll("[data-g]").forEach(function(t){profile.groups[+t.dataset.g].keys=split(t.value)});
+    document.querySelectorAll("[data-w]").forEach(function(t){profile.groups[+t.dataset.w].weight=Number(t.value)||0});
+    profile.negatives=split($("negKeys").value);
+    lsSet(LS_PROFILE,profile);alertBox("Profile saved.");
+  };
+  $("resetProfile").onclick=function(){profile=JSON.parse(JSON.stringify(DEFAULT_PROFILE));lsSet(LS_PROFILE,profile);drawProfile();alertBox("Profile reset.")};
+  drawProfile();
+
+  // Tracker
+  var STATUSES=["New","Interested","Applied","Interview","Offer","Rejected","Skipped"];
+  function drawTable(){
+    var f=$("filterTier").value;
+    var list=jobs.filter(function(j){return !f||j.tier===f}).sort(function(a,b){
+      var x=a[sortKey]||"",y=b[sortKey]||"";if(sortKey==="tier"){x=a.score;y=b.score}
+      return (x>y?1:x<y?-1:0)*sortDir});
+    $("emptyMsg").style.display=jobs.length?"none":"block";
+    $("rows").innerHTML=list.map(function(j){
+      var role=j.link?'<a href="'+esc(j.link)+'" target="_blank" rel="noopener noreferrer">'+esc(j.title)+'</a>':esc(j.title);
+      return '<tr><td><b>'+j.score+'</b></td><td><span class="tier '+tierClass(j.tier)+'" style="padding:2px 9px;font-size:12px">'+esc(j.tier)+'</span></td><td>'+role+'</td><td>'+esc(j.company)+'</td><td>'+esc(j.closing||"")+'</td><td><select data-s="'+j.id+'" style="padding:4px 6px">'+STATUSES.map(function(s){return "<option"+(s===j.status?" selected":"")+">"+s+"</option>"}).join("")+'</select></td><td><button class="small ghost" data-d="'+j.id+'">✕</button></td></tr>';
+    }).join("");
+  }
+  $("rows").addEventListener("change",function(e){var id=e.target.dataset.s;if(!id)return;jobs.forEach(function(j){if(String(j.id)===id)j.status=e.target.value});lsSet(LS_JOBS,jobs)});
+  $("rows").addEventListener("click",function(e){var id=e.target.dataset.d;if(!id)return;jobs=jobs.filter(function(j){return String(j.id)!==id});lsSet(LS_JOBS,jobs);drawTable()});
+  document.querySelectorAll("th[data-k]").forEach(function(th){th.onclick=function(){var k=th.dataset.k;sortDir=(sortKey===k)?-sortDir:-1;sortKey=k;drawTable()}});
+  $("filterTier").onchange=drawTable;
+
+  function download(name,data,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type:type}));a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000)}
+  $("exportCsv").onclick=function(){
+    var cols=["score","tier","title","company","link","closing","status","added"];
+    var csv=cols.join(",")+"\n"+jobs.map(function(j){return cols.map(function(c){return '"'+String(j[c]==null?"":j[c]).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
+    download("opporthunters.csv",csv,"text/csv");
+  };
+  $("exportJson").onclick=function(){download("opporthunters-backup.json",JSON.stringify({profile:profile,jobs:jobs},null,2),"application/json")};
+  $("importJson").onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){
+    try{var d=JSON.parse(r.result);if(Array.isArray(d.jobs))jobs=d.jobs;if(d.profile&&d.profile.groups)profile=d.profile;lsSet(LS_JOBS,jobs);lsSet(LS_PROFILE,profile);drawProfile();drawTable();alertBox("Restored.")}catch(err){alertBox("That file could not be read.")}};r.readAsText(f)};
+
+  drawTable();
+  window.__oh={assess:assess};
+})();
+</script>
+</body>
+</html>
