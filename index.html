@@ -108,7 +108,21 @@
   </section>
 
   <section class="card full">
-    <h2>4 · Tracker</h2>
+    <h2>4 · Latest scout report</h2>
+    <p class="muted" id="scoutMeta">The job scout runs every Monday and Thursday and saves its ranked picks to <code>data/latest.json</code>; full write-ups are in the <code>reports/</code> folder.</p>
+    <div class="actions" style="margin-top:0;margin-bottom:10px">
+      <select id="scoutTier" style="width:auto"><option value="">All tiers</option><option>Very High</option><option>High</option><option>Mid</option><option>Low</option></select>
+      <label class="small ghost" style="margin:0;display:inline-block;border:1px solid var(--line);border-radius:9px;padding:5px 10px;cursor:pointer;color:var(--text)">Load latest.json<input type="file" id="loadScout" accept=".json" style="display:none"></label>
+    </div>
+    <table>
+      <thead><tr><th>Score</th><th>Tier</th><th>Verdict</th><th>Role</th><th>Company</th><th>Location</th><th>Pay (est.)</th><th>Why / gaps</th><th></th></tr></thead>
+      <tbody id="scoutRows"></tbody>
+    </table>
+    <p class="muted" id="scoutEmpty">No scout report loaded yet. When the page is served (GitHub Pages or Workers) it loads automatically; opened as a local file, use “Load latest.json”.</p>
+  </section>
+
+  <section class="card full">
+    <h2>5 · Tracker</h2>
     <div class="actions" style="margin-top:0;margin-bottom:10px">
       <select id="filterTier" style="width:auto"><option value="">All tiers</option><option>Very High</option><option>High</option><option>Mid</option><option>Low</option></select>
       <button class="small ghost" id="exportCsv">Export CSV</button>
@@ -127,7 +141,7 @@
 <script>
 (function(){
   "use strict";
-  var LS_PROFILE="oh_profile_v1", LS_JOBS="oh_jobs_v1";
+  var LS_PROFILE="oh_profile_v2", LS_JOBS="oh_jobs_v1";
   function lsGet(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
   function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 
@@ -136,16 +150,16 @@
     years:25,
     groups:[
       {name:"Incident response & detection",weight:30,keys:["incident response","incident detection","incident management","sirt","csirt","cert","dfir","digital forensics","threat detection","threat hunting","crisis management","crisis exercise","tabletop","playbook","ioc","indicators of compromise","cve","vulnerability management","threat intelligence","cyber threat intelligence","red team","purple team","breach","containment"]},
-      {name:"SOC & security engineering",weight:20,keys:["soc","security operations","siem","soar","edr","xdr","ndr","ddos","waf","splunk","qradar","sentinel","log analytics","detection engineering","use case","mitre att&ck","att&ck","d3fend","firewall","cloud security","zero trust","network security"]},
-      {name:"Leadership & governance",weight:20,keys:["lead","leader","leadership","head","director","manager","management","stakeholder","strategy","roadmap","governance","risk management","budget","team","mentor","board","senior management","programme","program","policy","framework","nist","iso 27001","compliance","audit"]},
+      {name:"SOC & security engineering",weight:20,keys:["soc","security operations","cyber operations","siem","soar","edr","xdr","ndr","ddos","waf","splunk","qradar","chronicle","google secops","sentinel","log analytics","detection engineering","use case","mitre att&ck","att&ck","d3fend","firewall","endpoint security","network security","identity security","cloud security","cloud","devsecops","zero trust","bug bounty","va/pt","vapt","penetration testing","anti-scam","fraud"]},
+      {name:"Leadership & governance",weight:20,keys:["lead","leader","leadership","head","director","deputy director","manager","management","stakeholder","strategy","roadmap","governance","risk management","resilience","regulator","regulators","budget","team","mentor","board","senior management","programme","program","project management","policy","framework","nist","nist csf","compliance","audit","cciso","pmp","ceh"]},
       {name:"AI & automation",weight:15,keys:["ai","artificial intelligence","genai","generative ai","llm","machine learning","ml","agentic","ai agent","automation","ai security","securing ai","atlas","prompt injection","ai governance","python","copilot"]},
-      {name:"Sector & domain fit",weight:15,keys:["critical information infrastructure","cii","critical infrastructure","government","public sector","public service","govtech","csa","cyber security agency","singapore","smart nation","transport","payments","financial services","mas trm","cybersecurity act","national","defence","ot security","infrastructure"]}
+      {name:"Sector & domain fit",weight:15,keys:["critical information infrastructure","cii","critical infrastructure","government","statutory board","cyber defence exercise","cyberstar","cyberguard","aviation","airport","telco","telecommunications","public sector","public service","govtech","csa","cyber security agency","singapore","smart nation","transport","payments","financial services","mas trm","cybersecurity act","national","defence","ot security","infrastructure"]}
     ],
     negatives:["intern","internship","fresh graduate","graduate programme","entry level","entry-level","junior","0-2 years","1-2 years","1-3 years","no experience","part-time","sales quota","commission only"]
   };
 
   // Common requirement terms we check for even if they are not in the profile (to surface gaps).
-  var GAP_TERMS=["cissp","cism","cisa","ccsp","gcih","gcfa","oscp","crest","giac","ccisp","aws","azure","gcp","kubernetes","devsecops","appsec","penetration testing","iam","pam","grc","ot security","ics","scada","privacy","pdpa","data protection","iso 27001","nist csf","mas trm","cloud","malware analysis","reverse engineering","budget ownership","p&l","people management","degree","master","mba","security clearance","japanese","mandarin","bahasa","on-call","24/7","shift"];
+  var GAP_TERMS=["cissp","cism","cisa","ccsp","gcih","gcfa","oscp","crest","giac","aws","azure","gcp","kubernetes","devsecops","appsec","penetration testing","iam","pam","grc","ot security","ics","scada","privacy","pdpa","data protection","iso 27001","nist csf","mas trm","cloud","malware analysis","reverse engineering","budget ownership","p&l","people management","degree","master","mba","security clearance","japanese","mandarin","bahasa","on-call","24/7","shift"];
 
   var profile=lsGet(LS_PROFILE,null)||JSON.parse(JSON.stringify(DEFAULT_PROFILE));
   var jobs=lsGet(LS_JOBS,[]);
@@ -309,6 +323,31 @@
     try{var d=JSON.parse(r.result);if(Array.isArray(d.jobs))jobs=d.jobs;if(d.profile&&d.profile.groups)profile=d.profile;lsSet(LS_JOBS,jobs);lsSet(LS_PROFILE,profile);drawProfile();drawTable();alertBox("Restored.")}catch(err){alertBox("That file could not be read.")}};r.readAsText(f)};
 
   drawTable();
+
+  // Scout report (data/latest.json written by the scheduled job scout)
+  var scout=null;
+  function drawScout(){
+    var body=$("scoutRows");
+    if(!scout||!Array.isArray(scout.jobs)){body.innerHTML="";$("scoutEmpty").style.display="block";return}
+    $("scoutEmpty").style.display="none";
+    $("scoutMeta").textContent="Report "+(scout.generated||"")+(scout.window?" · covers "+scout.window:"")+" · "+(scout.reviewed||scout.jobs.length)+" reviewed, "+scout.jobs.length+" shortlisted";
+    var f=$("scoutTier").value;
+    body.innerHTML=scout.jobs.filter(function(j){return !f||j.tier===f}).map(function(j){
+      var u=safeUrl(j.url);
+      var role=u?'<a href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">'+esc(j.title)+'</a>':esc(j.title);
+      return '<tr><td><b>'+esc(j.score)+'</b></td><td><span class="tier '+tierClass(j.tier)+'" style="padding:2px 9px;font-size:12px">'+esc(j.tier)+'</span></td><td>'+esc(j.verdict||"")+(j.status?'<div class="muted">'+esc(j.status)+'</div>':'')+'</td><td>'+role+'<div class="muted">'+esc(j.source||"")+(j.posted?" · "+esc(j.posted):"")+'</div></td><td>'+esc(j.company)+'<div class="muted">'+esc(j.industry||"")+'</div></td><td>'+esc(j.location||"")+'<div class="muted">'+esc(j.work_mode||"")+'</div></td><td>'+esc(j.salary_estimate||"")+'<div class="muted">'+esc(j.comp_rating||"")+'</div></td><td>'+esc(j.why||"")+(j.gaps?'<div class="muted">Gap: '+esc(j.gaps)+'</div>':'')+'</td><td><button class="small ghost" data-track="'+esc(j.url||j.title)+'">Track</button></td></tr>';
+    }).join("");
+  }
+  $("scoutTier").onchange=drawScout;
+  $("scoutRows").addEventListener("click",function(e){var k=e.target.dataset.track;if(!k||!scout)return;
+    var j=scout.jobs.filter(function(x){return (x.url||x.title)===k})[0];if(!j)return;
+    if(jobs.some(function(x){return x.link&&x.link===safeUrl(j.url)})){alertBox("Already in tracker.");return}
+    jobs.push({id:Date.now(),title:j.title||"(untitled role)",company:j.company||"",link:safeUrl(j.url),closing:j.closing||"",score:Number(j.score)||0,tier:j.tier||"Mid",status:"Interested",added:new Date().toISOString().slice(0,10)});
+    lsSet(LS_JOBS,jobs);drawTable();alertBox("Added to tracker.")});
+  $("loadScout").onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{scout=JSON.parse(r.result);drawScout()}catch(err){alertBox("That file could not be read.")}};r.readAsText(f)};
+  if(location.protocol.indexOf("http")===0){fetch("data/latest.json",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(d){if(d){scout=d;drawScout()}}).catch(function(){})}
+  drawScout();
+
   window.__oh={assess:assess};
 })();
 </script>
